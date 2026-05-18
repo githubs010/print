@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paste and Print Screenshot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 40px;
+            background-color: #f4f4f9;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        #paste-area {
+            border: 3px dashed #b0b0b0;
+            background-color: white;
+            padding: 40px;
+            text-align: center;
+            color: #666;
+            width: 80%;
+            max-width: 800px;
+            min-height: 300px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        #instructions {
+            font-size: 18px;
+        }
+
+        #image-container img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            display: none; /* Hidden until you paste an image */
+            margin-top: 20px;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        /* Print Settings: This ensures ONLY the image prints */
+        @media print {
+            body {
+                background-color: white;
+                margin: 0;
+                padding: 0;
+            }
+            h2, #instructions, button {
+                display: none !important; /* Hide text and buttons on paper */
+            }
+            #paste-area {
+                border: none;
+                padding: 0;
+                width: 100%;
+                min-height: auto;
+            }
+            #image-container img {
+                box-shadow: none;
+                border: none;
+                max-width: 100%;
+                width: 100%; /* Scales image to fit the page */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Screenshot Printer</h2>
+
+    <div id="paste-area">
+        <p id="instructions">Click anywhere on this page and press <br><br><strong>Ctrl + V</strong> (Windows) or <strong>Cmd + V</strong> (Mac)<br><br> to paste your screenshot.</p>
+        
+        <div id="image-container"></div>
+        
+        <button id="print-btn" onclick="window.print()">🖨️ Print Image</button>
+    </div>
+
+    <script>
+        // Listen for the paste event on the whole document
+        document.addEventListener('paste', function (event) {
+            const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+            let imageFound = false;
+
+            // Look through the clipboard items
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                
+                // If the pasted item is an image
+                if (item.type.indexOf('image') !== -1) {
+                    const blob = item.getAsFile();
+                    const reader = new FileReader();
+
+                    reader.onload = function (e) {
+                        // Create an image tag
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+
+                        // Clear the container and put the new image inside
+                        const container = document.getElementById('image-container');
+                        container.innerHTML = '';
+                        container.appendChild(img);
+
+                        // Hide the instruction text and show the print button
+                        document.getElementById('instructions').style.display = 'none';
+                        document.getElementById('print-btn').style.display = 'block';
+                    };
+
+                    reader.readAsDataURL(blob);
+                    imageFound = true;
+                    break;
+                }
+            }
+
+            // Alert the user if they pasted text instead of an image
+            if (!imageFound) {
+                alert("No image detected. Please make sure you copied a screenshot.");
+            }
+        });
+    </script>
+
+</body>
+</html>
