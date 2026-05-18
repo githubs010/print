@@ -3,131 +3,549 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paste and Print Screenshot</title>
+    <title>Full Page Screenshot & Document Printer</title>
     <style>
+        /* --- Root Variables & Themes --- */
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f1f5f9;
+            --panel-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            margin: 40px;
-            background-color: #f4f4f9;
         }
 
-        h2 {
-            color: #333;
-        }
-
-        #paste-area {
-            border: 3px dashed #b0b0b0;
-            background-color: white;
-            padding: 40px;
-            text-align: center;
-            color: #666;
-            width: 80%;
-            max-width: 800px;
-            min-height: 300px;
-            border-radius: 10px;
+        header {
+            background-color: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        header h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* --- Workspace Layout --- */
+        .workspace {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 65px);
+            overflow: hidden;
+        }
+
+        /* --- Sidebar Controls --- */
+        .controls-panel {
+            width: 320px;
+            background-color: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 1.5rem;
+            display: flex;
             flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+            box-shadow: var(--shadow-sm);
         }
 
-        #instructions {
-            font-size: 18px;
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
         }
 
-        #image-container img {
-            max-width: 100%;
-            height: auto;
-            border: 1px solid #ccc;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        .control-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
-        button {
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: bold;
+        /* Interactive Buttons & Segmented Controls */
+        .segmented-control {
+            display: flex;
+            background-color: #f1f5f9;
+            padding: 0.25rem;
+            border-radius: 8px;
+            gap: 0.25rem;
+        }
+
+        .segmented-btn {
+            flex: 1;
+            border: none;
+            background: none;
+            padding: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-radius: 6px;
             cursor: pointer;
-            background-color: #28a745;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+        }
+
+        .segmented-btn.active {
+            background-color: #ffffff;
+            color: var(--primary-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-action {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background-color: var(--primary-color);
             color: white;
             border: none;
-            border-radius: 5px;
-            display: none; /* Hidden until you paste an image */
-            margin-top: 20px;
-            transition: 0.3s;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
         }
 
-        button:hover {
-            background-color: #218838;
+        .btn-action:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
         }
 
-        /* Print Settings: This ensures ONLY the image prints */
+        .btn-action:active {
+            transform: translateY(1px);
+        }
+
+        .btn-secondary {
+            background-color: #f1f5f9;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background-color: #e2e8f0;
+        }
+
+        /* --- Live Preview Canvas Area --- */
+        .preview-area {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Empty State / Paste Area Box */
+        #drop-zone {
+            border: 3px dashed #cbd5e1;
+            background-color: var(--panel-bg);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 600px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        #drop-zone:hover {
+            border-color: var(--primary-color);
+            background-color: #f8fafc;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+        }
+
+        /* The simulated Paper Preview Sheet */
+        #paper-sheet-container {
+            display: none;
+            perspective: 1000px;
+            transition: all 0.3s ease;
+        }
+
+        #paper-sheet {
+            background-color: #ffffff;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* Standard A4 Aspect Ratios for Preview (A4 = 210 x 297 mm) */
+        .portrait-sheet {
+            width: 420px;
+            height: 594px; /* Scaled aspect ratio of ~1.414 */
+        }
+
+        .landscape-sheet {
+            width: 594px;
+            height: 420px;
+        }
+
+        /* Live Preview Image behavior */
+        #paper-sheet img {
+            transition: all 0.2s ease;
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+        }
+
+        /* Fit settings applied to live preview img */
+        #paper-sheet.fit-contain img {
+            object-fit: contain;
+            width: 100%;
+            height: 100%;
+        }
+
+        #paper-sheet.fit-fill img {
+            object-fit: fill;
+            width: 100%;
+            height: 100%;
+        }
+
+        #paper-sheet.fit-cover img {
+            object-fit: cover;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Rotation classes */
+        .rotate-0 { transform: rotate(0deg); }
+        .rotate-90 { transform: rotate(90deg); }
+        .rotate-180 { transform: rotate(180deg); }
+        .rotate-270 { transform: rotate(270deg); }
+
+        /* Margin simulation inside preview */
+        .margin-none {
+            padding: 0 !important;
+        }
+        .margin-normal {
+            padding: 1.5rem !important;
+        }
+
+        #error-msg {
+            color: #ef4444;
+            background-color: #fef2f2;
+            border: 1px solid #fca5a5;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            display: none;
+            margin-top: 1rem;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        /* Help Info block */
+        .info-card {
+            background-color: #f8fafc;
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* --- Print Mode Overrides (THE CORE ENGINE) --- */
         @media print {
-            body {
-                background-color: white;
+            /* Remove standard page margins so we can fill borderless */
+            @page {
                 margin: 0;
-                padding: 0;
             }
-            h2, #instructions, button {
-                display: none !important; /* Hide text and buttons on paper */
+
+            body {
+                background: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                height: 100vh !important;
+                width: 100vw !important;
+                display: block !important;
             }
-            #paste-area {
-                border: none;
-                padding: 0;
-                width: 100%;
-                min-height: auto;
+
+            /* Hide all interactive UI elements completely */
+            header, .controls-panel, #drop-zone, .info-card, #error-msg {
+                display: none !important;
             }
-            #image-container img {
-                box-shadow: none;
-                border: none;
-                max-width: 100%;
-                width: 100%; /* Scales image to fit the page */
+
+            .workspace {
+                display: block !important;
+                height: 100vh !important;
+                width: 100vw !important;
+                overflow: visible !important;
+            }
+
+            .preview-area {
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                display: block !important;
+                overflow: visible !important;
+            }
+
+            #paper-sheet-container {
+                display: block !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                transform: none !important;
+            }
+
+            #paper-sheet {
+                border: none !important;
+                box-shadow: none !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                background: white !important;
+            }
+
+            /* Hard overrides to stretch image exactly to A4 sheet boundaries */
+            #paper-sheet img {
+                box-shadow: none !important;
+                border: none !important;
+                width: 100vw !important;
+                height: 100vh !important;
+            }
+
+            #paper-sheet.fit-contain img {
+                object-fit: contain !important;
+            }
+
+            #paper-sheet.fit-fill img {
+                object-fit: fill !important; /* Stretches document to fill physical paper page edges */
+            }
+
+            #paper-sheet.fit-cover img {
+                object-fit: cover !important;
             }
         }
     </style>
 </head>
 <body>
 
-    <h2>Screenshot Printer</h2>
+    <header>
+        <h1>📄 Smart Screenshot Document Printer</h1>
+        <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">
+            Paste, Fit, Format & Print Beautifully
+        </div>
+    </header>
 
-    <div id="paste-area">
-        <p id="instructions">Click anywhere on this page and press <br><br><strong>Ctrl + V</strong> (Windows) or <strong>Cmd + V</strong> (Mac)<br><br> to paste your screenshot.</p>
-        
-        <div id="image-container"></div>
-        
-        <button id="print-btn" onclick="window.print()">🖨️ Print Image</button>
+    <div class="workspace">
+        <!-- Control Panel Settings -->
+        <aside class="controls-panel">
+            <div class="control-group">
+                <span class="control-label">Document Actions</span>
+                <button id="print-btn" class="btn-action" onclick="window.print()" disabled>
+                    🖨️ Print Document
+                </button>
+                <button id="reset-btn" class="btn-action btn-secondary" onclick="resetWorkspace()" style="display:none;">
+                    🔄 Reset / Paste New
+                </button>
+            </div>
+
+            <!-- Page Orientation Control -->
+            <div class="control-group">
+                <span class="control-label">Page Orientation</span>
+                <div class="segmented-control">
+                    <button id="orient-auto" class="segmented-btn active" onclick="setOrientation('auto')">
+                        ⚡ Auto
+                    </button>
+                    <button id="orient-port" class="segmented-btn" onclick="setOrientation('portrait')">
+                        Portrait
+                    </button>
+                    <button id="orient-land" class="segmented-btn" onclick="setOrientation('landscape')">
+                        Landscape
+                    </button>
+                </div>
+            </div>
+
+            <!-- Print Fit Mode Control -->
+            <div class="control-group">
+                <span class="control-label">Page Fill Style</span>
+                <div class="segmented-control">
+                    <button id="fit-contain" class="segmented-btn active" onclick="setFitMode('contain')" title="Fits without cutting anything off">
+                        Fit Page
+                    </button>
+                    <button id="fit-fill" class="segmented-btn" onclick="setFitMode('fill')" title="Fills page completely (Stretches to edges)">
+                        Fill / Stretch
+                    </button>
+                    <button id="fit-cover" class="segmented-btn" onclick="setFitMode('cover')" title="Fills page completely (Crops edges if needed)">
+                        Cover Page
+                    </button>
+                </div>
+            </div>
+
+            <!-- Rotation Controls (Great for Landscape Screenshots) -->
+            <div class="control-group">
+                <span class="control-label">Rotate Document</span>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn-action btn-secondary" style="flex: 1;" onclick="rotateImage(-90)">
+                        ↩️ Left 90°
+                    </button>
+                    <button class="btn-action btn-secondary" style="flex: 1;" onclick="rotateImage(90)">
+                        ↪️ Right 90°
+                    </button>
+                </div>
+            </div>
+
+            <!-- Page Margins Control -->
+            <div class="control-group">
+                <span class="control-label">Print Margins</span>
+                <div class="segmented-control">
+                    <button id="margin-none" class="segmented-btn active" onclick="setMarginMode('none')">
+                        Borderless (Full)
+                    </button>
+                    <button id="margin-normal" class="segmented-btn" onclick="setMarginMode('normal')">
+                        Safe Margin
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tips for User -->
+            <div class="info-card">
+                <strong>💡 Tip for Perfect Results:</strong><br>
+                For official records and receipts, use the <strong>Fill / Stretch</strong> or <strong>Fit Page</strong> option, and set your browser's print dialog to "Background Graphics: ON" and "Margins: None" for borderless prints.
+            </div>
+        </aside>
+
+        <!-- Preview & Paste Zone -->
+        <main class="preview-area">
+            <!-- File Paste Target -->
+            <div id="drop-zone" onclick="triggerManualPasteInput()">
+                <div class="upload-icon">📋</div>
+                <h3 style="font-weight: 600;">Click inside this block & press paste</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 400px; margin-top: 0.5rem;">
+                    Press <strong>Ctrl + V</strong> (Windows) or <strong>Cmd + V</strong> (Mac) to directly import your screenshot.
+                </p>
+            </div>
+
+            <!-- Error Notification -->
+            <div id="error-msg"></div>
+
+            <!-- Simulated Sheet Preview -->
+            <div id="paper-sheet-container">
+                <span class="control-label" style="display: block; text-align: center; margin-bottom: 0.5rem;">
+                    Sheet Preview (What will print)
+                </span>
+                <div id="paper-sheet" class="portrait-sheet fit-contain margin-none">
+                    <!-- Image will render here -->
+                </div>
+            </div>
+        </main>
     </div>
 
-    <script>
-        // Listen for the paste event on the whole document
-        document.addEventListener('paste', function (event) {
-            const items = (event.clipboardData || event.originalEvent.clipboardData).items;
-            let imageFound = false;
+    <!-- Injectable CSS Rules for Native Browser Print Handler -->
+    <style id="dynamic-print-rules"></style>
 
-            // Look through the clipboard items
+    <script>
+        let currentImage = null;
+        let currentRotation = 0;
+        let selectedOrientation = 'auto'; // 'auto', 'portrait', 'landscape'
+        let currentFitMode = 'contain';
+        let currentMarginMode = 'none';
+        let naturalAspect = 1; // aspect ratio of image
+
+        // Focus window on load to catch paste immediately
+        window.onload = () => {
+            window.focus();
+        };
+
+        // Manual click instruction helper
+        function triggerManualPasteInput() {
+            // Focus page so paste events capture flawlessly
+            window.focus();
+            const zone = document.getElementById('drop-zone');
+            zone.style.borderColor = 'var(--primary-color)';
+            zone.style.backgroundColor = '#f8fafc';
+            setTimeout(() => {
+                zone.style.borderColor = '#cbd5e1';
+                zone.style.backgroundColor = 'var(--panel-bg)';
+            }, 600);
+        }
+
+        // Listen for standard paste inputs anywhere on the DOM
+        document.addEventListener('paste', function (event) {
+            const items = (event.clipboardData || window.clipboardData).items;
+            let imageFound = false;
+            const errorMsg = document.getElementById('error-msg');
+            errorMsg.style.display = 'none';
+
             for (let i = 0; i < items.length; i++) {
                 const item = items[i];
-                
-                // If the pasted item is an image
                 if (item.type.indexOf('image') !== -1) {
                     const blob = item.getAsFile();
                     const reader = new FileReader();
 
                     reader.onload = function (e) {
-                        // Create an image tag
                         const img = document.createElement('img');
                         img.src = e.target.result;
+                        img.id = 'pasted-doc-img';
 
-                        // Clear the container and put the new image inside
-                        const container = document.getElementById('image-container');
-                        container.innerHTML = '';
-                        container.appendChild(img);
-
-                        // Hide the instruction text and show the print button
-                        document.getElementById('instructions').style.display = 'none';
-                        document.getElementById('print-btn').style.display = 'block';
+                        img.onload = function () {
+                            naturalAspect = img.naturalWidth / img.naturalHeight;
+                            currentImage = img;
+                            
+                            // Initialize page orientations
+                            applyAutoLayout();
+                            renderPreview();
+                            
+                            // Adjust UI panels
+                            document.getElementById('drop-zone').style.display = 'none';
+                            document.getElementById('paper-sheet-container').style.display = 'block';
+                            document.getElementById('print-btn').removeAttribute('disabled');
+                            document.getElementById('reset-btn').style.display = 'flex';
+                        };
                     };
 
                     reader.readAsDataURL(blob);
@@ -136,11 +554,133 @@
                 }
             }
 
-            // Alert the user if they pasted text instead of an image
             if (!imageFound) {
-                alert("No image detected. Please make sure you copied a screenshot.");
+                errorMsg.innerText = "No screenshot detected in clipboard. Copy an image and try again!";
+                errorMsg.style.display = 'block';
             }
         });
+
+        // Apply automatic sizing based on image layout
+        function applyAutoLayout() {
+            if (selectedOrientation === 'auto') {
+                const rotatedAspect = (currentRotation % 180 === 0) ? naturalAspect : (1 / naturalAspect);
+                const pageSheet = document.getElementById('paper-sheet');
+                
+                if (rotatedAspect > 1.05) { // Landscape orientation
+                    pageSheet.className = `landscape-sheet fit-${currentFitMode} margin-${currentMarginMode}`;
+                    updatePrintEngine('landscape');
+                } else { // Portrait orientation
+                    pageSheet.className = `portrait-sheet fit-${currentFitMode} margin-${currentMarginMode}`;
+                    updatePrintEngine('portrait');
+                }
+            }
+        }
+
+        // Apply Fit configuration styles
+        function setFitMode(mode) {
+            currentFitMode = mode;
+            ['fit-contain', 'fit-fill', 'fit-cover'].forEach(m => {
+                document.getElementById(m).classList.remove('active');
+            });
+            document.getElementById(`fit-${mode}`).classList.add('active');
+            renderPreview();
+        }
+
+        // Apply Page orientation styles
+        function setOrientation(orient) {
+            selectedOrientation = orient;
+            ['orient-auto', 'orient-port', 'orient-land'].forEach(o => {
+                const suffix = o.split('-')[1];
+                document.getElementById(o).classList.remove('active');
+            });
+            
+            let targetButtonId = `orient-auto`;
+            if (orient === 'portrait') targetButtonId = 'orient-port';
+            if (orient === 'landscape') targetButtonId = 'orient-land';
+            document.getElementById(targetButtonId).classList.add('active');
+
+            const pageSheet = document.getElementById('paper-sheet');
+            if (orient === 'portrait') {
+                pageSheet.className = `portrait-sheet fit-${currentFitMode} margin-${currentMarginMode}`;
+                updatePrintEngine('portrait');
+            } else if (orient === 'landscape') {
+                pageSheet.className = `landscape-sheet fit-${currentFitMode} margin-${currentMarginMode}`;
+                updatePrintEngine('landscape');
+            } else {
+                applyAutoLayout();
+            }
+        }
+
+        // Rotate Image helper
+        function rotateImage(degrees) {
+            currentRotation = (currentRotation + degrees) % 360;
+            if (currentRotation < 0) currentRotation += 360;
+            
+            renderPreview();
+            applyAutoLayout();
+        }
+
+        // Toggle print margins configuration
+        function setMarginMode(mode) {
+            currentMarginMode = mode;
+            ['margin-none', 'margin-normal'].forEach(m => {
+                document.getElementById(m).classList.remove('active');
+            });
+            document.getElementById(`margin-${mode}`).classList.add('active');
+            renderPreview();
+        }
+
+        // Build native styling on page to pass custom dynamic CSS attributes down to browser engine
+        function updatePrintEngine(pageOrientation) {
+            const printStyles = document.getElementById('dynamic-print-rules');
+            printStyles.innerHTML = `
+                @media print {
+                    @page {
+                        size: ${pageOrientation};
+                        margin: 0;
+                    }
+                }
+            `;
+        }
+
+        // Redraw preview sheet layout changes on window modification
+        function renderPreview() {
+            if (!currentImage) return;
+
+            const sheet = document.getElementById('paper-sheet');
+            sheet.innerHTML = '';
+
+            // Clone to avoid side-effects on rotation DOM modifications
+            const imgClone = currentImage.cloneNode(true);
+            imgClone.className = `rotate-${currentRotation}`;
+            
+            sheet.appendChild(imgClone);
+            
+            // Reapply layout state class structure
+            const baseClass = (sheet.classList.contains('landscape-sheet')) ? 'landscape-sheet' : 'portrait-sheet';
+            sheet.className = `${baseClass} fit-${currentFitMode} margin-${currentMarginMode}`;
+        }
+
+        // Clear and Reset state parameters
+        function resetWorkspace() {
+            currentImage = null;
+            currentRotation = 0;
+            selectedOrientation = 'auto';
+            currentFitMode = 'contain';
+            currentMarginMode = 'none';
+
+            // Reset CSS layout states
+            document.getElementById('paper-sheet').innerHTML = '';
+            document.getElementById('paper-sheet-container').style.display = 'none';
+            document.getElementById('drop-zone').style.display = 'flex';
+            document.getElementById('print-btn').setAttribute('disabled', 'true');
+            document.getElementById('reset-btn').style.display = 'none';
+
+            // Active State Buttons Reset
+            setOrientation('auto');
+            setFitMode('contain');
+            setMarginMode('none');
+        }
     </script>
 
 </body>
